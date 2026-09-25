@@ -1,0 +1,72 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+}
+
+model Centre {
+  id       String    @id @default(uuid())
+  name     String
+  location String
+  tests    Test[]
+  bookings Booking[]
+}
+
+model Test {
+  id       String    @id @default(uuid())
+  name     String
+  price    Float
+  centreId String
+  centre   Centre    @relation(fields: [centreId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  testId          String
+  test            Test          @relation(fields: [testId], references: [id])
+  centreId        String
+  centre          Centre        @relation(fields: [centreId], references: [id])
+  appointmentTime DateTime
+  amount          Float
+  status          BookingStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  payments        Payment[]
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  status          PaymentStatus
+  providerEventId String        @unique
+  createdAt       DateTime      @default(now())
+}
