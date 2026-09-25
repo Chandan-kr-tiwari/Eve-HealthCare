@@ -41,7 +41,7 @@ model Centre {
 model Test {
   id       String    @id @default(uuid())
   name     String
-  price    Float
+  price    Decimal
   centreId String
   centre   Centre    @relation(fields: [centreId], references: [id])
   bookings Booking[]
@@ -56,7 +56,7 @@ model Booking {
   centreId        String
   centre          Centre        @relation(fields: [centreId], references: [id])
   appointmentTime DateTime
-  amount          Float
+  amount          Decimal
   status          BookingStatus @default(PENDING)
   createdAt       DateTime      @default(now())
   payments        Payment[]
