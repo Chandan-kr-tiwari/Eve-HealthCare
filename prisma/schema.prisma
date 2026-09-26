@@ -36,6 +36,7 @@ model Centre {
   location String
   tests    Test[]
   bookings Booking[]
+  @@unique([name, location])
 }
 
 model Test {
