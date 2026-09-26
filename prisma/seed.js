@@ -139,16 +139,105 @@ async function main() {
         }
     }
 
+// -------------------------
+// 4. Bookings
+// -------------------------
+
+const completeBloodCount = await prisma.test.findFirst({
+    where: {
+        name: 'Complete Blood Count',
+        centreId: centre1.id
+    }
+});
+
+const lipidProfile = await prisma.test.findFirst({
+    where: {
+        name: 'Lipid Profile',
+        centreId: centre1.id
+    }
+});
+
+const liverFunctionTest = await prisma.test.findFirst({
+    where: {
+        name: 'Liver Function Test',
+        centreId: centre2.id
+    }
+});
+
+await prisma.booking.upsert({
+    where: {
+        centreId_testId_appointmentTime: {
+            centreId: centre1.id,
+            testId: completeBloodCount.id,
+            appointmentTime: new Date('2026-10-05T10:00:00.000Z')
+        }
+    },
+    update: {},
+    create: {
+        userId: user1.id,
+        testId: completeBloodCount.id,
+        centreId: centre1.id,
+        appointmentTime: new Date('2026-10-05T10:00:00.000Z'),
+        amount: completeBloodCount.price,
+        status: 'PENDING'
+    }
+});
+
+await prisma.booking.upsert({
+    where: {
+        centreId_testId_appointmentTime: {
+            centreId: centre1.id,
+            testId: lipidProfile.id,
+            appointmentTime: new Date('2026-10-06T11:00:00.000Z')
+        }
+    },
+    update: {},
+    create: {
+        userId: user1.id,
+        testId: lipidProfile.id,
+        centreId: centre1.id,
+        appointmentTime: new Date('2026-10-06T11:00:00.000Z'),
+        amount: lipidProfile.price,
+        status: 'CONFIRMED'
+    }
+});
+
+await prisma.booking.upsert({
+    where: {
+        centreId_testId_appointmentTime: {
+            centreId: centre2.id,
+            testId: liverFunctionTest.id,
+            appointmentTime: new Date('2026-10-07T14:00:00.000Z')
+        }
+    },
+    update: {},
+    create: {
+        userId: user2.id,
+        testId: liverFunctionTest.id,
+        centreId: centre2.id,
+        appointmentTime: new Date('2026-10-07T14:00:00.000Z'),
+        amount: liverFunctionTest.price,
+        status: 'CANCELLED'
+    }
+});
+
     console.log('Seed completed successfully.');
 
-    console.log({
-        users: [user1.email, user2.email],
-        centres: [
-            centre1.name,
-            centre2.name,
-            centre3.name
-        ]
-    });
+console.log({
+    users: [user1.email, user2.email],
+
+    centres: [
+        centre1.name,
+        centre2.name,
+        centre3.name
+    ],
+
+    bookings: [
+        'CBC - Apollo Diagnostics - 10:00 AM - PENDING',
+        'Lipid Profile - Apollo Diagnostics - 11:00 AM - CONFIRMED',
+        'Liver Function Test - Dr Lal PathLabs - 2:00 PM - CANCELLED'
+    ]
+});
 }
 
 main()
