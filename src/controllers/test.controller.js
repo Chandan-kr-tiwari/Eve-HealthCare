@@ -1,27 +1,31 @@
 const { ZodError } = require('zod');
 
-const centreService = require('../services/centre.service');
+const testService = require('../services/test.service');
 
 const {
-    createCentreSchema,
-    updateCentreSchema,
+    createTestSchema,
+    updateTestSchema,
+    testIdSchema,
     centreIdSchema
-} = require('../validators/centre.validator');
+} = require('../validators/test.validator');
 
 
-async function createCentre(req, res) {
+async function createTest(req, res) {
     try {
-        const { name, location } = createCentreSchema.parse(req.body);
+        const { centreId } = centreIdSchema.parse(req.params);
 
-        const centre = await centreService.createCentre({
+        const { name, price } = createTestSchema.parse(req.body);
+
+        const test = await testService.createTest({
             name,
-            location
+            price,
+            centreId
         });
 
         return res.status(201).json({
             success: true,
-            message: 'Centre created successfully',
-            data: centre
+            message: 'Test created successfully',
+            data: test
         });
 
     } catch (error) {
@@ -44,13 +48,15 @@ async function createCentre(req, res) {
 }
 
 
-async function getAllCentres(req, res) {
+async function getTestsByCentre(req, res) {
     try {
-        const centres = await centreService.getAllCentres();
+        const { centreId } = centreIdSchema.parse(req.params);
+
+        const tests = await testService.getTestsByCentre(centreId);
 
         return res.status(200).json({
             success: true,
-            data: centres
+            data: tests
         });
 
     } catch (error) {
@@ -73,15 +79,15 @@ async function getAllCentres(req, res) {
 }
 
 
-async function getCentreById(req, res) {
+async function getTestById(req, res) {
     try {
-        const { id } = centreIdSchema.parse(req.params);
+        const { id } = testIdSchema.parse(req.params);
 
-        const centre = await centreService.getCentreById(id);
+        const test = await testService.getTestById(id);
 
         return res.status(200).json({
             success: true,
-            data: centre
+            data: test
         });
 
     } catch (error) {
@@ -104,18 +110,18 @@ async function getCentreById(req, res) {
 }
 
 
-async function updateCentre(req, res) {
+async function updateTest(req, res) {
     try {
-        const { id } = centreIdSchema.parse(req.params);
+        const { id } = testIdSchema.parse(req.params);
 
-        const data = updateCentreSchema.parse(req.body);
+        const data = updateTestSchema.parse(req.body);
 
-        const centre = await centreService.updateCentre(id, data);
+        const test = await testService.updateTest(id, data);
 
         return res.status(200).json({
             success: true,
-            message: 'Centre updated successfully',
-            data: centre
+            message: 'Test updated successfully',
+            data: test
         });
 
     } catch (error) {
@@ -138,11 +144,11 @@ async function updateCentre(req, res) {
 }
 
 
-async function deleteCentre(req, res) {
+async function deleteTest(req, res) {
     try {
-        const { id } = centreIdSchema.parse(req.params);
+        const { id } = testIdSchema.parse(req.params);
 
-        const result = await centreService.deleteCentre(id);
+        const result = await testService.deleteTest(id);
 
         return res.status(200).json({
             success: true,
@@ -170,9 +176,9 @@ async function deleteCentre(req, res) {
 
 
 module.exports = {
-    createCentre,
-    getAllCentres,
-    getCentreById,
-    updateCentre,
-    deleteCentre
+    createTest,
+    getTestsByCentre,
+    getTestById,
+    updateTest,
+    deleteTest
 };

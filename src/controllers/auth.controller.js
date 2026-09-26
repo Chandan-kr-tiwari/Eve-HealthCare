@@ -1,5 +1,5 @@
 const { ZodError } = require("zod");
-const { signupSchema, loginSchema } = require("../validators/auth.validators");
+const { signupSchema, loginSchema } = require("../validators/auth.validator");
 const authService = require("../services/auth.service");
 
 async function signUp(req, res) {
