@@ -143,6 +143,10 @@ async function main() {
 // 4. Bookings
 // -------------------------
 
+// -------------------------
+// 4. Bookings
+// -------------------------
+
 const completeBloodCount = await prisma.test.findFirst({
     where: {
         name: 'Complete Blood Count',
@@ -164,62 +168,71 @@ const liverFunctionTest = await prisma.test.findFirst({
     }
 });
 
-await prisma.booking.upsert({
+// Booking 1
+const existingBooking1 = await prisma.booking.findFirst({
     where: {
-        centreId_testId_appointmentTime: {
-            centreId: centre1.id,
-            testId: completeBloodCount.id,
-            appointmentTime: new Date('2026-10-05T10:00:00.000Z')
-        }
-    },
-    update: {},
-    create: {
-        userId: user1.id,
+        centreId: centre1.id,
         testId: completeBloodCount.id,
-        centreId: centre1.id,
-        appointmentTime: new Date('2026-10-05T10:00:00.000Z'),
-        amount: completeBloodCount.price,
-        status: 'PENDING'
+        appointmentTime: new Date('2026-10-05T10:00:00.000Z')
     }
 });
 
-await prisma.booking.upsert({
-    where: {
-        centreId_testId_appointmentTime: {
+if (!existingBooking1) {
+    await prisma.booking.create({
+        data: {
+            userId: user1.id,
+            testId: completeBloodCount.id,
             centreId: centre1.id,
-            testId: lipidProfile.id,
-            appointmentTime: new Date('2026-10-06T11:00:00.000Z')
+            appointmentTime: new Date('2026-10-05T10:00:00.000Z'),
+            amount: completeBloodCount.price,
+            status: 'PENDING'
         }
-    },
-    update: {},
-    create: {
-        userId: user1.id,
-        testId: lipidProfile.id,
+    });
+}
+
+// Booking 2
+const existingBooking2 = await prisma.booking.findFirst({
+    where: {
         centreId: centre1.id,
-        appointmentTime: new Date('2026-10-06T11:00:00.000Z'),
-        amount: lipidProfile.price,
-        status: 'CONFIRMED'
+        testId: lipidProfile.id,
+        appointmentTime: new Date('2026-10-06T11:00:00.000Z')
     }
 });
 
-await prisma.booking.upsert({
-    where: {
-        centreId_testId_appointmentTime: {
-            centreId: centre2.id,
-            testId: liverFunctionTest.id,
-            appointmentTime: new Date('2026-10-07T14:00:00.000Z')
+if (!existingBooking2) {
+    await prisma.booking.create({
+        data: {
+            userId: user1.id,
+            testId: lipidProfile.id,
+            centreId: centre1.id,
+            appointmentTime: new Date('2026-10-06T11:00:00.000Z'),
+            amount: lipidProfile.price,
+            status: 'CONFIRMED'
         }
-    },
-    update: {},
-    create: {
-        userId: user2.id,
-        testId: liverFunctionTest.id,
+    });
+}
+
+// Booking 3
+const existingBooking3 = await prisma.booking.findFirst({
+    where: {
         centreId: centre2.id,
-        appointmentTime: new Date('2026-10-07T14:00:00.000Z'),
-        amount: liverFunctionTest.price,
-        status: 'CANCELLED'
+        testId: liverFunctionTest.id,
+        appointmentTime: new Date('2026-10-07T14:00:00.000Z')
     }
 });
+
+if (!existingBooking3) {
+    await prisma.booking.create({
+        data: {
+            userId: user2.id,
+            testId: liverFunctionTest.id,
+            centreId: centre2.id,
+            appointmentTime: new Date('2026-10-07T14:00:00.000Z'),
+            amount: liverFunctionTest.price,
+            status: 'CANCELLED'
+        }
+    });
+}
 
     console.log('Seed completed successfully.');
 
