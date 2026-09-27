@@ -1,5 +1,6 @@
-version: '3.8'
+
 services:
+
   db:
     image: postgres:16
     restart: always
@@ -11,6 +12,24 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eve_user -d eve_healthcare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: "postgresql://eve_user:REDACTED@db:5432/eve_healthcare"
+      JWT_SECRET: "REDACTED"
+      PORT: 5000
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:
