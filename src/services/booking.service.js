@@ -4,6 +4,7 @@ const OPENING_HOUR = 9;
 const CLOSING_HOUR = 18;
 const SLOT_DURATION_MINUTES = 30;
 
+const ACTIVE_BOOKING_STATUSES = ["PENDING", "CONFIRMED"];
 
 async function createBooking({
     userId,
@@ -18,7 +19,7 @@ async function createBooking({
     });
 
     if (!centre) {
-        const error = new Error('Centre not found');
+        const error = new Error("Centre not found");
         error.statusCode = 404;
         throw error;
     }
@@ -30,14 +31,14 @@ async function createBooking({
     });
 
     if (!test) {
-        const error = new Error('Test not found');
+        const error = new Error("Test not found");
         error.statusCode = 404;
         throw error;
     }
 
     if (test.centreId !== centreId) {
         const error = new Error(
-            'Test does not belong to this centre'
+            "Test does not belong to this centre"
         );
         error.statusCode = 400;
         throw error;
@@ -47,35 +48,72 @@ async function createBooking({
 
     if (appointmentDate <= new Date()) {
         const error = new Error(
-            'Appointment time must be in the future'
+            "Appointment time must be in the future"
         );
         error.statusCode = 400;
         throw error;
     }
 
+    /*
+     * Serializable transaction prevents two concurrent
+     * requests from successfully booking the same slot.
+     */
     try {
-        const booking = await prisma.booking.create({
-            data: {
-                userId,
-                testId,
-                centreId,
-                appointmentTime: appointmentDate,
-                amount: test.price,
-                status: 'PENDING'
+        const booking = await prisma.$transaction(
+            async (tx) => {
+
+                // Check whether an active booking already exists
+                const existingBooking = await tx.booking.findFirst({
+                    where: {
+                        centreId,
+                        testId,
+                        appointmentTime: appointmentDate,
+                        status: {
+                            in: ACTIVE_BOOKING_STATUSES
+                        }
+                    }
+                });
+
+                if (existingBooking) {
+                    const error = new Error(
+                        "This appointment slot is already booked"
+                    );
+                    error.statusCode = 409;
+                    throw error;
+                }
+
+                // Create booking
+                return tx.booking.create({
+                    data: {
+                        userId,
+                        testId,
+                        centreId,
+                        appointmentTime: appointmentDate,
+                        amount: test.price,
+                        status: "PENDING"
+                    },
+                    include: {
+                        test: true,
+                        centre: true
+                    }
+                });
             },
-            include: {
-                test: true,
-                centre: true
+            {
+                isolationLevel: "Serializable"
             }
-        });
+        );
 
         return booking;
 
     } catch (error) {
-        // Prisma unique constraint violation
-        if (error.code === 'P2002') {
+
+        /*
+         * Prisma P2034 means the transaction failed because
+         * of a write conflict / serialization conflict.
+         */
+        if (error.code === "P2034") {
             const conflictError = new Error(
-                'This appointment slot is already booked'
+                "This appointment slot is already being booked"
             );
 
             conflictError.statusCode = 409;
@@ -181,7 +219,6 @@ async function getAvailableSlots({
     testId,
     date
 }) {
-    // Check centre exists
     const centre = await prisma.centre.findUnique({
         where: {
             id: centreId
@@ -189,12 +226,11 @@ async function getAvailableSlots({
     });
 
     if (!centre) {
-        const error = new Error('Centre not found');
+        const error = new Error("Centre not found");
         error.statusCode = 404;
         throw error;
     }
 
-    // Check test exists
     const test = await prisma.test.findUnique({
         where: {
             id: testId
@@ -202,26 +238,24 @@ async function getAvailableSlots({
     });
 
     if (!test) {
-        const error = new Error('Test not found');
+        const error = new Error("Test not found");
         error.statusCode = 404;
         throw error;
     }
 
-    // Make sure test belongs to centre
     if (test.centreId !== centreId) {
         const error = new Error(
-            'Test does not belong to this centre'
+            "Test does not belong to this centre"
         );
-
         error.statusCode = 400;
         throw error;
     }
 
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
-
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
 
-    // Get existing bookings for that centre/test/date
+    // Only active bookings block slots.
+    // CANCELLED and FAILED bookings are ignored.
     const bookings = await prisma.booking.findMany({
         where: {
             centreId,
@@ -231,7 +265,7 @@ async function getAvailableSlots({
                 lte: endOfDay
             },
             status: {
-                not: 'CANCELLED'
+                in: ACTIVE_BOOKING_STATUSES
             }
         },
         select: {
@@ -247,20 +281,16 @@ async function getAvailableSlots({
 
     const slots = [];
 
-    const openingHour = 9;
-    const closingHour = 18;
-    const slotDuration = 30;
-
     for (
-        let minutes = openingHour * 60;
-        minutes < closingHour * 60;
-        minutes += slotDuration
+        let minutes = OPENING_HOUR * 60;
+        minutes < CLOSING_HOUR * 60;
+        minutes += SLOT_DURATION_MINUTES
     ) {
         const hour = Math.floor(minutes / 60);
         const minute = minutes % 60;
 
         const slot = new Date(
-            `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00.000Z`
+            `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00.000Z`
         );
 
         if (!bookedTimes.has(slot.toISOString())) {
@@ -270,8 +300,6 @@ async function getAvailableSlots({
 
     return slots;
 }
-
-
 module.exports = {
     createBooking,
     getBookingById,
