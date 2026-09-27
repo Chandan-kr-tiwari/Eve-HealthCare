@@ -70,6 +70,7 @@ model Payment {
   bookingId       String
   booking         Booking       @relation(fields: [bookingId], references: [id])
   status          PaymentStatus
-  providerEventId String        @unique
+  providerEventId String?       @unique
   createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
