@@ -114,7 +114,7 @@ async function cancelBooking(req, res) {
 
         const booking = await bookingService.cancelBooking(
             id,
-            req.user.id
+            req.user.userId
         );
 
         return res.status(200).json({
