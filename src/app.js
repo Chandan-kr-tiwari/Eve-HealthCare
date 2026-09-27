@@ -2,10 +2,17 @@ const express = require('express');
 
 const app = express();
 
-app.use(express.json());
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swagger");
 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 const authRoutes = require('./routes/auth.routes');
 const centreRoutes = require('./routes/centre.routes')
 const testRoutes=require('./routes/test.routes')
