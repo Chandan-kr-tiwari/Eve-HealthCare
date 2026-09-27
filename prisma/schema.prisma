@@ -19,6 +19,7 @@ enum BookingStatus {
 enum PaymentStatus {
   SUCCESS
   FAILED
+  PENDING
 }
 
 model User {
@@ -61,8 +62,6 @@ model Booking {
   status          BookingStatus @default(PENDING)
   createdAt       DateTime      @default(now())
   payments        Payment[]
-
-  @@unique([centreId, testId, appointmentTime])
 }
 
 model Payment {
