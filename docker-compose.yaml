@@ -1,19 +1,17 @@
-
 services:
-
   db:
     image: postgres:16
     restart: always
     environment:
-      POSTGRES_USER: eve_user
-      POSTGRES_PASSWORD: REDACTED
-      POSTGRES_DB: eve_healthcare
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eve_user -d eve_healthcare"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,9 +22,9 @@ services:
     ports:
       - "5000:5000"
     environment:
-      DATABASE_URL: "postgresql://eve_user:REDACTED@db:5432/eve_healthcare"
-      JWT_SECRET: "REDACTED"
-      PORT: 5000
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT}
     depends_on:
       db:
         condition: service_healthy
