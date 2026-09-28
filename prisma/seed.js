@@ -143,10 +143,6 @@ async function main() {
 // 4. Bookings
 // -------------------------
 
-// -------------------------
-// 4. Bookings
-// -------------------------
-
 const completeBloodCount = await prisma.test.findFirst({
     where: {
         name: 'Complete Blood Count',
